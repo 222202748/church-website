@@ -2,15 +2,31 @@ import React from 'react';
 import RegistrationForm from './RegistrationForm';
 import { useLanguage } from '../contexts/LanguageContext';
 import { translations } from '../translations';
+import { API_ENDPOINTS } from '../config/api';
 
 const EventRegistration = () => {
   const { language } = useLanguage();
   const t = translations[language];
 
-  const handleSubmit = (formData) => {
-    // Here you would typically send this data to your backend
-    console.log('Event Registration:', formData);
-    alert(t.eventRegistration.successMessage);
+  const handleSubmit = async (formData) => {
+    try {
+      const response = await fetch(API_ENDPOINTS.eventRegistration, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      });
+
+      if (!response.ok) {
+        throw new Error('Registration failed');
+      }
+
+      alert(t.eventRegistration.successMessage);
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Registration failed. Please try again.');
+    }
   };
 
   return (

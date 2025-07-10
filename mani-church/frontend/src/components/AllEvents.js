@@ -1,478 +1,294 @@
-import React, { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { translations } from '../translations';
 
-const AllEvents = () => {
-  const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState('');
+const PastorCard = ({ name, image, role, description, phone, whatsapp }) => {
   const { language } = useLanguage();
-  const t = translations[language] || translations.en || {}; // Add fallback
+  const [imageError, setImageError] = useState(false);
 
-  const getCurrentDate = () => {
-    const today = new Date();
-    const options = { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'short', 
-      day: '2-digit' 
-    };
-    return today.toLocaleDateString(language === 'tamil' ? 'ta-IN' : 'en-US', options);
-  };
+  // Improved translation function with better debugging
+  const getTranslation = (key, fallback) => {
+    try {
+      console.log('Getting translation for:', key, 'in language:', language);
+      console.log('Translations object:', translations);
+      
+      if (!translations) {
+        console.error('Translations object is undefined');
+        return fallback;
+      }
 
-  // Add fallback values for missing translation keys
-  const getTranslation = (key, fallback = key) => {
-    return t[key] || fallback;
-  };
+      // Check what language keys are available
+      const availableLanguages = Object.keys(translations);
+      console.log('Available languages:', availableLanguages);
 
-  const events = [
-    {
-      id: 1,
-      title: getTranslation('wonderfulGathering', 'Wonderful Gathering'),
-      date: "28",
-      month: "JUN",
-      year: "2025",
-      time: getTranslation('eventTime', 'Time') + " 06:00 pm",
-      location: getTranslation('eventLocation', 'Location') + ": 7th main road,12th cross street,pudhu nallur,Kundrathur,ch-600069.",
-      description: getTranslation('events', 'Event Description'),
-      image: "https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=400&h=250&fit=crop&auto=format"
-    },
-    {
-      id: 2,
-      title: getTranslation('buildingBonds', 'Building Bonds'),
-      date: "29",
-      month: "JUN",
-      year: "2025",
-      time: getTranslation('eventTime', 'Time') + " 06:00 pm",
-      location: getTranslation('eventLocation', 'Location') + ": 7th main road,12th cross street,pudhu nallur,Kundrathur,ch-600069.",
-      description: getTranslation('events', 'Event Description'),
-      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=250&fit=crop&auto=format"
-    },
-    {
-      id: 3,
-      title: getTranslation('thankfulness', 'Thankfulness'),
-      date: "12",
-      month: "JUL",
-      year: "2025",
-      time: getTranslation('eventTime', 'Time') + " 12:00 pm",
-      location: getTranslation('eventLocation', 'Location') + ": 7th main road,12th cross street,pudhu nallur,Kundrathur,ch-600069.",
-      description: getTranslation('events', 'Event Description'),
-      image: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400&h=250&fit=crop&auto=format"
-    },
-    {
-      id: 4,
-      title: getTranslation('faithFellowship', 'Faith Fellowship'),
-      date: "27",
-      month: "JUL",
-      year: "2025",
-      time: getTranslation('eventTime', 'Time') + " 08:00 pm",
-      location: getTranslation('eventLocation', 'Location') + ": 7th main road,12th cross street,pudhu nallur,Kundrathur,ch-600069.",
-      description: getTranslation('events', 'Event Description'),
-      image: "https://images.unsplash.com/photo-1438032005730-c779502df39b?w=400&h=250&fit=crop&auto=format"
-    },
-    {
-      id: 5,
-      title: getTranslation('youthGathering', 'Youth Gathering'),
-      date: "15",
-      month: "AUG",
-      year: "2025",
-      time: getTranslation('eventTime', 'Time') + " 07:00 pm",
-      location: getTranslation('eventLocation', 'Location') + ": 7th main road,12th cross street,pudhu nallur,Kundrathur,ch-600069.",
-      description: getTranslation('events', 'Event Description'),
-      image: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=400&h=250&fit=crop&auto=format"
-    },
-    {
-      id: 6,
-      title: getTranslation('prayerService', 'Prayer Service'),
-      date: "28",
-      month: "AUG",
-      year: "2025",
-      time: getTranslation('eventTime', 'Time') + " 05:30 am",
-      location: getTranslation('eventLocation', 'Location') + ": 7th main road,12th cross street,pudhu nallur,Kundrathur,ch-600069.",
-      description: getTranslation('events', 'Event Description'),
-      image: "https://images.unsplash.com/photo-1504052434569-70ad5836ab65?w=400&h=250&fit=crop&auto=format"
-    }
-  ];
+      // Try different language key variations
+      let currentLang = null;
+      const possibleKeys = [
+        language,                                    // 'english' or 'tamil'
+        language.toLowerCase(),                      // 'english' or 'tamil' (lowercase)
+        language === 'english' ? 'en' : 'ta',      // Short codes
+        language === 'english' ? 'English' : 'Tamil', // Capitalized
+      ];
 
-  const filteredEvents = useMemo(() => {
-    if (!searchTerm.trim()) {
-      return events;
-    }
+      console.log('Trying language keys:', possibleKeys);
 
-    const searchLower = searchTerm.toLowerCase().trim();
-    
-    return events.filter(event => {
-      return (
-        event.title.toLowerCase().includes(searchLower) ||
-        event.location.toLowerCase().includes(searchLower) ||
-        event.description.toLowerCase().includes(searchLower) ||
-        event.month.toLowerCase().includes(searchLower) ||
-        event.date.includes(searchLower) ||
-        event.time.toLowerCase().includes(searchLower)
-      );
-    });
-  }, [searchTerm, events]);
+      for (const langKey of possibleKeys) {
+        if (translations[langKey]) {
+          currentLang = translations[langKey];
+          console.log(`Found translations for key: ${langKey}`, currentLang);
+          break;
+        }
+      }
 
-  const clearSearch = () => {
-    setSearchTerm('');
-  };
+      if (!currentLang) {
+        console.error(`No translations found for language: ${language}. Available: ${availableLanguages.join(', ')}`);
+        return fallback;
+      }
 
-  const styles = {
-    container: {
-      fontFamily: 'Arial, sans-serif',
-      backgroundColor: '#f8f8f8',
-      minHeight: '100vh'
-    },
-    topBar: {
-      backgroundColor: '#8B4513',
-      color: 'white',
-      padding: '8px 0',
-      fontSize: '14px'
-    },
-    topBarContent: {
-      maxWidth: '1200px',
-      margin: '0 auto',
-      padding: '0 20px'
-    },
-    eventsSection: {
-      maxWidth: '1200px',
-      margin: '0 auto',
-      padding: '40px 20px'
-    },
-    filterSection: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '20px',
-      marginBottom: '40px'
-    },
-    filterLeft: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '15px',
-      flexWrap: 'wrap'
-    },
-    dateText: {
-      fontSize: '16px',
-      fontWeight: '600',
-      whiteSpace: 'nowrap',
-      color: '#333'
-    },
-    iconButton: {
-      backgroundColor: 'transparent',
-      border: '1px solid #ddd',
-      padding: '8px 12px',
-      borderRadius: '4px',
-      cursor: 'pointer',
-      fontSize: '16px',
-      transition: 'all 0.3s ease'
-    },
-    searchContainer: {
-      position: 'relative',
-      width: '100%',
-      maxWidth: '350px'
-    },
-    searchInput: {
-      padding: '12px 80px 12px 40px',
-      border: '2px solid #ddd',
-      borderRadius: '25px',
-      fontSize: '16px',
-      width: '100%',
-      boxSizing: 'border-box',
-      transition: 'border-color 0.3s ease',
-      outline: 'none'
-    },
-    searchIcon: {
-      position: 'absolute',
-      left: '12px',
-      top: '50%',
-      transform: 'translateY(-50%)',
-      color: '#999',
-      fontSize: '18px'
-    },
-    clearButton: {
-      position: 'absolute',
-      right: '12px',
-      top: '50%',
-      transform: 'translateY(-50%)',
-      background: 'none',
-      border: 'none',
-      color: '#999',
-      cursor: 'pointer',
-      fontSize: '18px',
-      padding: '4px',
-      borderRadius: '50%',
-      transition: 'color 0.3s ease'
-    },
-    searchResults: {
-      marginBottom: '20px',
-      fontSize: '14px',
-      color: '#666',
-      fontStyle: 'italic'
-    },
-    eventsGrid: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-      gap: '30px',
-      marginBottom: '60px'
-    },
-    eventCard: {
-      backgroundColor: 'white',
-      borderRadius: '12px',
-      overflow: 'hidden',
-      boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-      display: 'flex',
-      flexDirection: 'column',
-      transition: 'transform 0.3s ease, box-shadow 0.3s ease'
-    },
-    eventImage: {
-      width: '100%',
-      height: '200px',
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-      position: 'relative'
-    },
-    dateTag: {
-      position: 'absolute',
-      top: '15px',
-      right: '15px',
-      backgroundColor: '#2d5a4a',
-      color: 'white',
-      padding: '8px 12px',
-      borderRadius: '6px',
-      textAlign: 'center',
-      fontSize: '14px',
-      fontWeight: 'bold'
-    },
-    dateNumber: {
-      fontSize: '20px',
-      lineHeight: '1'
-    },
-    dateMonth: {
-      fontSize: '12px',
-      opacity: '0.9'
-    },
-    eventContent: {
-      flex: '1',
-      padding: '20px',
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'space-between'
-    },
-    eventTitle: {
-      fontSize: '18px',
-      fontWeight: 'bold',
-      color: '#333',
-      margin: '0 0 10px 0'
-    },
-    eventTime: {
-      color: '#666',
-      margin: '0 0 5px 0',
-      fontSize: '14px'
-    },
-    eventLocation: {
-      color: '#666',
-      margin: '0 0 10px 0',
-      fontSize: '14px',
-      lineHeight: '1.4'
-    },
-    eventDescription: {
-      color: '#777',
-      fontSize: '13px',
-      lineHeight: '1.4',
-      margin: '0 0 20px 0'
-    },
-    registerButton: {
-      backgroundColor: '#D4B896',
-      color: '#5D4037',
-      border: 'none',
-      padding: '12px 20px',
-      fontSize: '14px',
-      fontWeight: '600',
-      borderRadius: '6px',
-      cursor: 'pointer',
-      alignSelf: 'flex-start',
-      transition: 'background-color 0.3s ease'
-    },
-    noResults: {
-      textAlign: 'center',
-      padding: '60px 20px',
-      color: '#666'
-    },
-    noResultsIcon: {
-      fontSize: '48px',
-      marginBottom: '20px'
-    },
-    noResultsText: {
-      fontSize: '18px',
-      marginBottom: '10px'
-    },
-    noResultsSubtext: {
-      fontSize: '14px',
-      color: '#999'
+      // Navigate nested keys
+      const keys = key.split('.');
+      let result = currentLang;
+      
+      console.log('Navigating keys:', keys);
+      
+      for (const k of keys) {
+        if (result && typeof result === 'object' && k in result) {
+          result = result[k];
+          console.log(`Found key ${k}:`, result);
+        } else {
+          console.error(`Translation key not found: ${k} in`, result);
+          return fallback;
+        }
+      }
+      
+      console.log('Final translation result:', result);
+      return result || fallback;
+    } catch (error) {
+      console.error(`Translation error for key: ${key}`, error);
+      return fallback;
     }
   };
 
-  const mediaStyles = `
-    @media (min-width: 768px) {
-      .filter-section {
-        flex-direction: row !important;
-        justify-content: space-between !important;
-        align-items: center !important;
-      }
-      .events-grid {
-        grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)) !important;
-      }
-      .event-card {
-        flex-direction: row !important;
-      }
-      .event-card:hover {
-        transform: translateY(-5px) !important;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
-      }
-      .event-image {
-        width: 200px !important;
-        height: 180px !important;
-        flex-shrink: 0 !important;
-      }
-      .event-title {
-        font-size: 20px !important;
-      }
-    }
+  // Handle image error
+  const handleImageError = () => {
+    setImageError(true);
+    console.warn(`Failed to load image: /images/${image}`);
+  };
 
-    @media (max-width: 767px) {
-      .events-section {
-        padding: 20px 15px !important;
-      }
-      .filter-left {
-        justify-content: center !important;
-      }
-      .search-container {
-        max-width: 100% !important;
-      }
-      .events-grid {
-        grid-template-columns: 1fr !important;
-        gap: 20px !important;
-      }
-    }
-
-    .icon-button:hover {
-      background-color: #f0f0f0 !important;
-      transform: translateY(-1px) !important;
-    }
-
-    .search-input:focus {
-      border-color: #8B4513 !important;
-    }
-
-    .clear-button:hover {
-      color: #8B4513 !important;
-      background-color: #f0f0f0 !important;
-    }
-  `;
+  // Fallback placeholder as data URL
+  const placeholderImage = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320' viewBox='0 0 320 320'%3E%3Crect width='320' height='320' fill='%23f0f0f0'/%3E%3Ccircle cx='160' cy='120' r='50' fill='%23ccc'/%3E%3Cpath d='M80 280c0-44 36-80 80-80s80 36 80 80' fill='%23ccc'/%3E%3C/svg%3E";
 
   return (
-    <>
-      <style dangerouslySetInnerHTML={{ __html: mediaStyles }} />
-      <div style={styles.container}>
-        <div style={styles.topBar}>
-          <div style={styles.topBarContent}></div>
-        </div>
+    <div className="col-12 col-lg-10 col-xl-8 mx-auto">
+      <div className="d-flex flex-column flex-lg-row bg-light p-4 rounded-3 align-items-center shadow-sm hover-shadow">
+        <img
+          src={imageError ? placeholderImage : `/images/${image}`}
+          className="img-fluid rounded-circle mb-3 mb-lg-0 me-lg-4"
+          alt={name}
+          onError={handleImageError}
+          style={{
+            width: '100%',
+            maxWidth: '320px',
+            height: 'auto',
+            objectFit: 'cover',
+            border: '4px solid #8B4513'
+          }}
+        />
+        <div>
+          <h3 className="fw-bold text-primary mb-2">{name}</h3>
+          <p className="text-muted mb-3 fs-5">{role}</p>
+          <p className="mb-3">{description}</p>
 
-        <div style={styles.eventsSection} className="events-section">
-          <div style={styles.filterSection} className="filter-section">
-            <div style={styles.filterLeft} className="filter-left">
-              <span style={styles.dateText}>{getCurrentDate()}</span>
-              <button style={styles.iconButton} title={getTranslation('eventCalendar', 'Event Calendar')}>📅</button>
-            </div>
-
-            <div style={styles.searchContainer} className="search-container">
-              <span style={styles.searchIcon}>🔍</span>
-              <input
-                type="text"
-                placeholder={getTranslation('search', 'Search')}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                style={styles.searchInput}
-                className="search-input"
-              />
-              {searchTerm && (
-                <button onClick={clearSearch} style={styles.clearButton} className="clear-button" title={getTranslation('search', 'Clear search')}>
-                  ✕
-                </button>
-              )}
-            </div>
+          {/* Communication Buttons */}
+          <div className="communication-buttons mb-3">
+            <a
+              href={`tel:${phone}`}
+              className="btn btn-outline-primary me-3 d-inline-flex align-items-center mb-2"
+              style={{ borderColor: '#8B4513', color: '#8B4513' }}
+              onMouseOver={(e) => {
+                e.target.style.backgroundColor = '#8B4513';
+                e.target.style.color = 'white';
+              }}
+              onMouseOut={(e) => {
+                e.target.style.backgroundColor = 'transparent';
+                e.target.style.color = '#8B4513';
+              }}
+            >
+              <i className="bi bi-telephone-fill me-2"></i>
+              {getTranslation('pastors.callNow', 'Call Now')}
+            </a>
+            <a
+              href={`https://wa.me/${whatsapp}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-success d-inline-flex align-items-center mb-2"
+              style={{ backgroundColor: '#25D366', borderColor: '#25D366' }}
+            >
+              <i className="bi bi-whatsapp me-2"></i>
+              {getTranslation('pastors.whatsapp', 'WhatsApp')}
+            </a>
           </div>
 
-          {searchTerm && (
-            <div style={styles.searchResults}>
-              {filteredEvents.length === 0 
-                ? `${getTranslation('noResults', 'No results found for')} "${searchTerm}"` 
-                : `${getTranslation('search', 'Found')} ${filteredEvents.length} ${getTranslation('events', 'events')}`
-              }
-            </div>
-          )}
-
-          {filteredEvents.length === 0 ? (
-            <div style={styles.noResults}>
-              <div style={styles.noResultsIcon}>🔍</div>
-              <div style={styles.noResultsText}>{getTranslation('noResults', 'No results found')}</div>
-              <div style={styles.noResultsSubtext}>
-                {getTranslation('search', 'Try a different search term')}
-              </div>
-              {searchTerm && (
-                <button onClick={clearSearch} style={{ ...styles.registerButton, marginTop: '20px' }}>
-                  {getTranslation('events', 'View all events')}
-                </button>
-              )}
-            </div>
-          ) : (
-            <div style={styles.eventsGrid} className="events-grid">
-              {filteredEvents.map((event) => (
-                <div key={event.id} style={styles.eventCard} className="event-card">
-                  <div 
-                    style={{ ...styles.eventImage, backgroundImage: `url(${event.image})` }}
-                    className="event-image"
-                  >
-                    <div style={styles.dateTag}>
-                      <div style={styles.dateNumber}>{event.date}</div>
-                      <div style={styles.dateMonth}>{event.month}</div>
-                    </div>
-                  </div>
-
-                  <div style={styles.eventContent} className="event-content">
-                    <div>
-                      <h3 style={styles.eventTitle}>{event.title}</h3>
-                      <p style={styles.eventTime}>🕐 {event.time}</p>
-                      <p style={styles.eventLocation}>📍 {event.location}</p>
-                      <p style={styles.eventDescription}>{event.description}</p>
-                    </div>
-
-                    <button
-                      onClick={() => navigate('/event-registration', { 
-                        state: { 
-                          eventTitle: event.title,
-                          eventDate: `${event.date} ${event.month} ${event.year}`,
-                          eventTime: event.time,
-                          eventLocation: event.location,
-                          eventDescription: event.description,
-                          eventId: event.id
-                        }
-                      })}                    
-                      style={styles.registerButton}
-                      onMouseEnter={(e) => e.target.style.backgroundColor = '#C5A47F'}
-                      onMouseLeave={(e) => e.target.style.backgroundColor = '#D4B896'}
-                    >
-                      {getTranslation('registerNow', 'Register Now')} →
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          {/* Social Media Icons */}
+          <div className="social-icons">
+            <a href="https://facebook.com/awakenur" className="text-dark me-3 fs-5"><i className="bi bi-facebook"></i></a>
+            <a href="https://twitter.com/awakenur" className="text-dark me-3 fs-5"><i className="bi bi-twitter"></i></a>
+            <a href="https://instagram.com/awakenur" className="text-dark me-3 fs-5"><i className="bi bi-instagram"></i></a>
+            <a href="https://t.me/awakenur" className="text-dark fs-5"><i className="bi bi-telegram"></i></a>
+          </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
-export default AllEvents;
+const Pastors = () => {
+  const { language } = useLanguage();
+
+  // Comprehensive debugging translation function
+  const getTranslation = (key, fallback) => {
+    console.log('🔍 === TRANSLATION DEBUG START ===');
+    console.log('Requested key:', key);
+    console.log('Current language from context:', language);
+    console.log('Language type:', typeof language);
+    console.log('Fallback:', fallback);
+    
+    // Check if translations object exists
+    console.log('Translations object:', translations);
+    console.log('Translations type:', typeof translations);
+    console.log('Translations is array?', Array.isArray(translations));
+    
+    if (!translations) {
+      console.error('❌ Translations object is null/undefined');
+      return fallback;
+    }
+
+    // Log all available language keys
+    const availableKeys = Object.keys(translations);
+    console.log('Available language keys:', availableKeys);
+    
+    // Try to find the correct language key
+    let currentLang = null;
+    let usedKey = null;
+    
+    // Test each possible key variation
+    const possibleKeys = [
+      language,                                    // Direct match
+      language?.toLowerCase(),                     // Lowercase
+      language?.toUpperCase(),                     // Uppercase  
+      language?.charAt(0).toUpperCase() + language?.slice(1), // Capitalize first letter
+      language === 'english' ? 'en' : 'ta',      // Short codes
+      language === 'english' ? 'English' : 'Tamil', // Full names capitalized
+      language === 'english' ? 'ENGLISH' : 'TAMIL', // All caps
+    ];
+
+    console.log('Trying these language key variations:', possibleKeys);
+
+    for (const langKey of possibleKeys) {
+      console.log(`Testing key: "${langKey}"`);
+      if (langKey && translations[langKey]) {
+        currentLang = translations[langKey];
+        usedKey = langKey;
+        console.log(`✅ Found translations for key: "${langKey}"`);
+        console.log('Translation object:', currentLang);
+        break;
+      } else {
+        console.log(`❌ No translations found for key: "${langKey}"`);
+      }
+    }
+
+    if (!currentLang) {
+      console.error('❌ No translations found for any language key variation');
+      console.log('Maybe try one of these available keys:', availableKeys);
+      return fallback;
+    }
+
+    console.log(`Using language key: "${usedKey}"`);
+    
+    // Navigate through nested keys
+    const keys = key.split('.');
+    let result = currentLang;
+    
+    console.log('Navigating through keys:', keys);
+    
+    for (let i = 0; i < keys.length; i++) {
+      const k = keys[i];
+      console.log(`Step ${i + 1}: Looking for key "${k}" in:`, result);
+      
+      if (result && typeof result === 'object' && k in result) {
+        result = result[k];
+        console.log(`✅ Found "${k}":`, result);
+      } else {
+        console.error(`❌ Key "${k}" not found in object`);
+        console.log('Available keys at this level:', result ? Object.keys(result) : 'N/A');
+        return fallback;
+      }
+    }
+    
+    console.log('🎉 Final translation result:', result);
+    console.log('🔍 === TRANSLATION DEBUG END ===');
+    return result || fallback;
+  };
+
+  // Debug logging
+  console.log('🚀 === PASTORS COMPONENT DEBUG ===');
+  console.log('Language Context:', { language });
+  console.log('Translations Import:', translations);
+  
+  // Test multiple translations
+  console.log('Testing translations...');
+  const testTranslations = {
+    meetOurPastor: getTranslation('pastors.meetOurPastor', 'Meet Our Pastor'),
+    pastorName: getTranslation('pastors.pastorName', 'SILUVAI RAJA'),
+    callNow: getTranslation('pastors.callNow', 'Call Now'),
+  };
+  console.log('Test results:', testTranslations);
+
+  const pastors = [
+    {
+      name: getTranslation('pastors.pastorName', 'SILUVAI RAJA'),
+      role: getTranslation('pastors.pastorRole', 'Pastor'),
+      image: 'pastor img.jpg',
+      description: getTranslation('pastors.pastorDescription', 'A dedicated spiritual leader with over 15 years of experience in ministry.'),
+      phone: '+919841711591',
+      whatsapp: '919841711591'
+    }
+  ];
+
+  return (
+    <section className="py-5" style={{ background: '#f8f9fa' }}>
+      <div className="container">
+        {/* Enhanced Debug info */}
+        <div className="alert alert-warning mb-4" style={{ fontSize: '11px', fontFamily: 'monospace' }}>
+          <strong>🔧 DEBUG INFO (Remove in production):</strong><br/>
+          <strong>Language Context:</strong> "{language}" (type: {typeof language})<br/>
+          <strong>Translations Object:</strong> {translations ? 'EXISTS' : 'MISSING'}<br/>
+          <strong>Available Keys:</strong> {translations ? Object.keys(translations).join(', ') : 'None'}<br/>
+          <strong>Test Results:</strong><br/>
+          - Meet Our Pastor: "{testTranslations.meetOurPastor}"<br/>
+          - Pastor Name: "{testTranslations.pastorName}"<br/>
+          - Call Now: "{testTranslations.callNow}"<br/>
+          <br/>
+          <strong>🚨 If Tamil not working, check:</strong><br/>
+          1. Is your language switching properly? Current: {language}<br/>
+          2. Do you have a key that matches in translations object?<br/>
+          3. Is the nested structure correct (pastors.keyName)?
+        </div>
+        
+        <h2 className="text-center fw-bold mb-4" style={{ color: '#8B4513' }}>
+          {getTranslation('pastors.meetOurPastor', 'Meet Our Pastor')}
+        </h2>
+        <p className="text-center mb-5 lead">
+          {getTranslation('pastors.meetOurPastorDescription', 'Meet our pastor, a dedicated leader guiding our community in faith and love.')}
+        </p>
+        <div className="row g-4 justify-content-center">
+          {pastors.map((pastor, index) => (
+            <PastorCard key={index} {...pastor} />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
+export default Pastors;

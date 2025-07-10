@@ -1,86 +1,47 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Calendar, Mail, Phone, MapPin, Download, Search, Filter, Eye, Trash2, RefreshCw, UserPlus } from 'lucide-react';
+import { API_ENDPOINTS, getAuthHeader } from '../config/api';
 
 const EventAdminPage = () => {
   const [registrations, setRegistrations] = useState([]);
   const [filteredRegistrations, setFilteredRegistrations] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [selectedRegistration, setSelectedRegistration] = useState(null);
+  const [error, setError] = useState(null);
 
-  // Mock data - In real app, this would come from your backend API
+  // Fetch registrations from backend
   useEffect(() => {
-    // Simulate loading data
-    setLoading(true);
-    setTimeout(() => {
-      const mockData = [
-        {
-          id: 1,
-          name: 'John Doe',
-          email: 'john.doe@email.com',
-          phone: '+91 9876543210',
-          address: '123 Main St, Chennai, Tamil Nadu',
-          eventType: 'Monthly Event',
-          registrationDate: '2025-06-10T10:30:00Z',
-          status: 'confirmed',
-          notes: 'First time attendee',
-          attendeeCount: 1
-        },
-        {
-          id: 2,
-          name: 'Mary Johnson',
-          email: 'mary.j@email.com',
-          phone: '+91 8765432109',
-          address: '456 Oak Ave, Coimbatore, Tamil Nadu',
-          eventType: 'Monthly Event',
-          registrationDate: '2025-06-11T14:15:00Z',
-          status: 'pending',
-          notes: 'Requested vegetarian meal',
-          attendeeCount: 2
-        },
-        {
-          id: 3,
-          name: 'David Smith',
-          email: 'david.smith@email.com',
-          phone: '+91 7654321098',
-          address: '789 Pine Rd, Madurai, Tamil Nadu',
-          eventType: 'Monthly Event',
-          registrationDate: '2025-06-12T09:45:00Z',
-          status: 'confirmed',
-          notes: '',
-          attendeeCount: 1
-        },
-        {
-          id: 4,
-          name: 'Sarah Wilson',
-          email: 'sarah.w@email.com',
-          phone: '+91 6543210987',
-          address: '321 Elm St, Salem, Tamil Nadu',
-          eventType: 'Monthly Event',
-          registrationDate: '2025-06-12T16:20:00Z',
-          status: 'cancelled',
-          notes: 'Cancelled due to emergency',
-          attendeeCount: 3
-        },
-        {
-          id: 5,
-          name: 'Michael Brown',
-          email: 'michael.b@email.com',
-          phone: '+91 5432109876',
-          address: '654 Maple Dr, Trichy, Tamil Nadu',
-          eventType: 'Monthly Event',
-          registrationDate: '2025-06-13T11:00:00Z',
-          status: 'confirmed',
-          notes: 'Bringing spouse',
-          attendeeCount: 2
-        }
-      ];
-      setRegistrations(mockData);
-      setFilteredRegistrations(mockData);
-      setLoading(false);
-    }, 1000);
+    fetchRegistrations();
   }, []);
+
+  const fetchRegistrations = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await fetch(API_ENDPOINTS.EVENT_REGISTRATIONS, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeader()
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setRegistrations(data);
+      setFilteredRegistrations(data);
+    } catch (error) {
+      console.error('Error fetching registrations:', error);
+      setError('Failed to load registrations. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Search and filter functionality
   useEffect(() => {
@@ -129,35 +90,54 @@ const EventAdminPage = () => {
         reg.name,
         reg.email,
         reg.phone,
-        reg.address,
-        formatDate(reg.registrationDate),
-        reg.status,
-        reg.attendeeCount,
+        reg.address || '',
+        formatDate(reg.createdAt || reg.registrationDate),
+        reg.status || 'pending',
+        reg.attendeeCount || 1,
         reg.notes || ''
       ])
     ].map(row => row.map(field => `"${field}"`).join(',')).join('\n');
 
-    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = `event-registrations-${new Date().toISOString().split('T')[0]}.csv`;
+    a.style.visibility = 'hidden';
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     window.URL.revokeObjectURL(url);
   };
 
-  const handleDeleteRegistration = (id) => {
+  const handleDeleteRegistration = async (id) => {
     if (window.confirm('Are you sure you want to delete this registration?')) {
-      setRegistrations(prev => prev.filter(reg => reg.id !== id));
+      try {
+        const response = await fetch(`${API_ENDPOINTS.EVENT_REGISTRATIONS}/${id}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            ...getAuthHeader()
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        // Remove the deleted registration from the state
+        setRegistrations(prev => prev.filter(reg => reg._id !== id));
+        setFilteredRegistrations(prev => prev.filter(reg => reg._id !== id));
+        alert('Registration deleted successfully!');
+      } catch (error) {
+        console.error('Error deleting registration:', error);
+        alert('Failed to delete registration. Please try again.');
+      }
     }
   };
 
   const refreshData = () => {
-    setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
-    }, 1000);
+    fetchRegistrations();
   };
 
   const totalRegistrations = registrations.length;
@@ -298,7 +278,7 @@ const EventAdminPage = () => {
 
         {/* Registrations Table */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
+          <div className="px-6 py-4 border-b border-gray  -200">
             <h2 className="text-lg font-semibold text-gray-900">
               Registrations ({filteredRegistrations.length})
             </h2>
@@ -308,6 +288,17 @@ const EventAdminPage = () => {
             <div className="p-8 text-center">
               <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
               <p className="text-gray-600">Loading registrations...</p>
+            </div>
+          ) : error ? (
+            <div className="p-8 text-center text-red-500">
+              <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p>{error}</p>
+              <button 
+                onClick={fetchRegistrations}
+                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Retry
+              </button>
             </div>
           ) : filteredRegistrations.length === 0 ? (
             <div className="p-8 text-center text-gray-500">
@@ -341,7 +332,7 @@ const EventAdminPage = () => {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredRegistrations.map((registration) => (
-                    <tr key={registration.id} className="hover:bg-gray-50">
+                    <tr key={registration._id || registration.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
                           <div className="text-sm font-medium text-gray-900">
@@ -349,7 +340,7 @@ const EventAdminPage = () => {
                           </div>
                           <div className="text-sm text-gray-500 flex items-center mt-1">
                             <MapPin className="w-3 h-3 mr-1" />
-                            {registration.address}
+                            {registration.address || 'N/A'}
                           </div>
                         </div>
                       </td>
@@ -366,18 +357,18 @@ const EventAdminPage = () => {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900 flex items-center">
                           <Calendar className="w-4 h-4 mr-2 text-gray-400" />
-                          {formatDate(registration.registrationDate)}
+                          {formatDate(registration.createdAt || registration.registrationDate)}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900 flex items-center">
                           <UserPlus className="w-4 h-4 mr-2 text-gray-400" />
-                          {registration.attendeeCount} {registration.attendeeCount === 1 ? 'person' : 'people'}
+                          {registration.attendeeCount || 1} {(registration.attendeeCount || 1) === 1 ? 'person' : 'people'}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${getStatusColor(registration.status)}`}>
-                          {registration.status.charAt(0).toUpperCase() + registration.status.slice(1)}
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${getStatusColor(registration.status || 'pending')}`}>
+                          {(registration.status || 'pending').charAt(0).toUpperCase() + (registration.status || 'pending').slice(1)}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -390,7 +381,7 @@ const EventAdminPage = () => {
                             <Eye className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => handleDeleteRegistration(registration.id)}
+                            onClick={() => handleDeleteRegistration(registration._id || registration.id)}
                             className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-100"
                             title="Delete Registration"
                           >
@@ -441,16 +432,16 @@ const EventAdminPage = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Registration Date</label>
-                    <p className="mt-1 text-sm text-gray-900">{formatDate(selectedRegistration.registrationDate)}</p>
+                    <p className="mt-1 text-sm text-gray-900">{formatDate(selectedRegistration.createdAt || selectedRegistration.registrationDate)}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Number of Attendees</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedRegistration.attendeeCount} {selectedRegistration.attendeeCount === 1 ? 'person' : 'people'}</p>
+                    <p className="mt-1 text-sm text-gray-900">{selectedRegistration.attendeeCount || 1} {(selectedRegistration.attendeeCount || 1) === 1 ? 'person' : 'people'}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Status</label>
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border mt-1 ${getStatusColor(selectedRegistration.status)}`}>
-                      {selectedRegistration.status.charAt(0).toUpperCase() + selectedRegistration.status.slice(1)}
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border mt-1 ${getStatusColor(selectedRegistration.status || 'pending')}`}>
+                      {(selectedRegistration.status || 'pending').charAt(0).toUpperCase() + (selectedRegistration.status || 'pending').slice(1)}
                     </span>
                   </div>
                   {selectedRegistration.notes && (

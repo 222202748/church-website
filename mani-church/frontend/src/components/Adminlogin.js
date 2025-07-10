@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_ENDPOINTS } from '../config/api';
 
 const AdminLogin = () => {
   const [username, setUsername] = useState('');
@@ -7,16 +8,27 @@ const AdminLogin = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
-    e.preventDefault();
-    const validUsername = 'admin';
-    const validPassword = 'admin1234';
+  const handleLogin = async (credentials) => {
+    try {
+      const response = await fetch(API_ENDPOINTS.auth + '/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(credentials)
+      });
 
-    if (username === validUsername && password === validPassword) {
-      setError('');
-      navigate('/admin/dashboard'); // ✅ Redirect after login
-    } else {
-      setError('Invalid username or password');
+      if (!response.ok) {
+        throw new Error('Login failed');
+      }
+
+      const data = await response.json();
+      localStorage.setItem('token', data.token);
+      // Redirect to admin dashboard
+      navigate('/admin/dashboard');
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Login failed. Please check your credentials.');
     }
   };
 

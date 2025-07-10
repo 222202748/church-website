@@ -8,18 +8,16 @@ import AwakenurNavbar from './components/Navbar';
 import Header from './components/Header';
 import EventCountdown from './components/EventCountdown';
 import Pastors from './components/Pastors';
-// import Sermons from './components/Sermons';
 import BlogArticles from './components/BlogArticles';
-
+import Blog from './components/Blog';
 import EventRegistration from './components/EventRegistration';
 import Footer from './components/Footer';
 import Events from './components/AllEvents';
 import Contact from './components/Contact';
 import { LanguageProvider } from './contexts/LanguageContext';
-import { translations } from './translations';
 import Admindashboard from './components/Admindashboard';
 import Adminlogin from './components/Adminlogin';
-import { useLanguage } from './contexts/LanguageContext';
+
 
 
 const Home = () => (
@@ -38,9 +36,8 @@ function App() {
         <AwakenurNavbar />
         <Routes>
           <Route path="/" element={<Home />} />
-          {/* <Route path="/sermons" element={<Sermons />} /> */}
           <Route path="/events" element={<Events />} />
-          <Route path="/blog" element={<BlogArticles />} />
+          <Route path="/blog" element={<Blog />} />
           <Route path="/pastors" element={<Pastors />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/Admin" element={<Adminlogin />} />

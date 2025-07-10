@@ -19,7 +19,7 @@ const ArticleCard = ({ image, date, title, description }) => (
   </div>
 );
 
-const BlogArticles = () => {
+const Articles = () => {
   const articles = [
     {
       image: 'https://via.placeholder.com/600x400?text=Church+1',
@@ -27,18 +27,7 @@ const BlogArticles = () => {
       title: 'Impacting Lives: Stories of Faith in Action',
       description: 'Discover powerful stories of faith in action, where belief and compassion come together to make a lasting impact on lives and communities.'
     },
-    {
-      image: 'https://via.placeholder.com/600x400?text=Church+2',
-      date: '17 DEC',
-      title: 'Maintaining Faith During Life\'s Greatest Challenges',
-      description: 'In times of hardship, faith provides the strength and hope needed to navigate life\'s toughest challenges, offering resilience through every trial.'
-    },
-    {
-      image: 'https://via.placeholder.com/600x400?text=Church+3',
-      date: '17 DEC',
-      title: 'Building Community: The Importance of Fellowship',
-      description: 'Discover how building meaningful connections and fostering fellowship strengthen communities, creating a sense of belonging and support.'
-    }
+    
   ];
 
   return (
@@ -58,4 +47,4 @@ const BlogArticles = () => {
   );
 };
 
-export default BlogArticles;
+export default Articles;
